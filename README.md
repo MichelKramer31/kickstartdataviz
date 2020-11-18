@@ -1,10 +1,15 @@
 # Kickstart Dataviz Project
 
 ## Start the environement
-Install http-server for the whole machine
+
+Assuming that Node.js is installed on your computer
+
+Install  http-server for the whole machine
 > npm install --global http-server
 
-Go to the project repository and start the server with
+Copy the wasabi-artist.json into the source/ folder.
+
+Go to the project folder and start the server with
 
 > npm start
 
