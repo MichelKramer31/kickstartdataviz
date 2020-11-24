@@ -1,4 +1,3 @@
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -22,10 +21,10 @@ var svg = d3.select("#chart")
     .attr("width", width)
     .attr("height", height);
 
-var xScale = d3.scaleLinear()
+var xScale = d3.scale.Linear()
     .range([margin.left, width - margin.right]);
 
-var yScale = d3.scaleBand()
+var yScale = d3.scale.Band()
     .range([margin.top, height - margin.bottom])
     .paddingInner(0.2);
 
