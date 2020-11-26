@@ -10,21 +10,39 @@ and open the template in the editor.
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style type="text/css" src="css/bullet.css"></style>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <link href="css/bullet.css" rel="stylesheet">
         <link href="css/parset.css" rel="stylesheet">
     </head>
-    <body>
+    <body onload="onLoad()">
         <script src="includes/d3.js"></script>
         <script src="includes/d3-parset.js"></script>
+<div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" style="color: #dddddd">Mission Control Bar</a>
 
-        <div id="vis"></div>
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" id="status"></a>
+                </li>
+            </ul>
 
+            <button class="btn btn-secondary" type="button" id="load_wasabi">Load Wasabi Data</button>
+            <button class="btn btn-warning" id="process_data" type="button">Process Data</button>
+            <button class="btn btn-success" id="draw_graph" type="button">Draw</button>
 
+        </nav>
+         <div class="row">
+            <div id="vis"></div>
+        </div>
+</div>
 <!--        <script src="scripts/barChart.js"></script>-->
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
         <script src="scripts/process.js"></script>
         <script src="includes/tools.js"></script>
         <script src="includes/bullet.js"></script>
-        <script src="scripts/draw.js"></script>
-
+        <script src="scripts/interface.js"></script>
+        <script src="scripts/genre.js"></script>
     </body>
 </html>

@@ -1,100 +1,209 @@
 
 var wasabiData;
-var artistes;
+var actualData;
 
-async function getWasabiData() {
+async function getWasabiData(callback) {
     wasabiData = await getJSON("source/wasabi-artist.json");
     console.log(wasabiData);
+    callback();
 }
 
-function gitanPipeline(){
+function pipeline(callback) {
 
-    stage0 = wasabiData;
-    stage1 = keepCountry(stage0);
-    stage2 = keepDeezerFans(stage1);
-    stage3 = keepGenre(stage2);
-    stage4 = keepLifeSpanBegin(stage3);
-    stage5 = keepLocation(stage4);
-    stage6 = keepReleaventData(stage5);
+    actualData = wasabiData;
 
-    console.log(stage6);
+    //filter
+    keepCountry();
+    keepDeezerFans();
+    keepGenre();
+    keepLifeSpanBegin();
+    keepLocation();
+    keepReleaventData();
+
+    //prepare data
+    splitDBPGenre();
+    splitGenre();
+    splitLocation();
+
+    //consolidation des données
+    mergeGenres();
+    pickCountry();
+    determinerFin();
+
+    //unwind les genre
+    unwindGenre();
+    clusterGenre();
+
+    callback()
 }
 
-function trierWasabiDataByType(){
-    wasabiData = groupBy(wasabiData, 'type');
-    console.log(wasabiData);
+function unwindGenre(){
+
+    finalData = [];
+    actualData.forEach(function (artiste) {
+
+        artiste.genres.forEach(function(genre){
+            finalData.push({
+                'location': artiste.location,
+                'genre': genre,
+                'fini': artiste.fini
+            })
+        })
+
+    })
 }
 
+function determinerFin(){
 
-function keepReleaventData(inputData){
-    outputData = inputData.map(function (person) {
-        return {
-            'gender':(person.gender!=undefined||person.gender!="")?"NA":person.gender,
-            'genre':(person.genre!=undefined||person.genre!="")?"NA":person.genre,
-            'deezerFan':person.deezerFan,
-            'lifeBegin':person.lifeSpan.begin,
+    actualData.forEach(function(artist){
+        if(artist.lifeSpan.end != ""){
+            artist.fini = "En activité";
+        }
+        else{
+            artist.fini = "Dissous"
+        }
+        delete(artist.lifeSpan);
+
+    })
+}
+
+function pickCountry(){
+    actualData.forEach(function(artist){
+        artist.location = artist.location[0]
+    })
+}
+
+function mergeGenres(){
+    actualData.forEach(function(artist){
+
+        //si les deux contiennent des array on les fusionne
+        if(Array.isArray(artist.genres)&&Array.isArray(artist.dbp_genres)){
+            artist.genres = artist.genres.concat(artist.dbp_genres)
+        }
+        else if(Array.isArray(artist.genres)&&!Array.isArray(artist.dbp_genres)){
+            delete artist['dbp_genres']
+        }
+        else if(!Array.isArray(artist.genres)&&Array.isArray(artist.dbp_genres)){
+            artist.genres = artist.dbp_genres
+            delete artist.dbp_genres
         }
     })
-    return outputData;
 }
 
-function keepLifeSpanBegin(inputData){
+function keepReleaventData(){
+    actualData = actualData.map(function (person) {
+        return {
+            'genres':person.genres,
+            'dbp_genres':person.dbp_genre,
+            'deezerFan':person.deezerFans,
+            'lifeSpan':person.lifeSpan,
+            'location':person.locationInfo
+        }
+    })
 
-    outputData = inputData.filter(function (artist) {
+}
+
+function keepLifeSpanBegin(){
+
+    actualData = actualData.filter(function (artist) {
 
         return artist.lifeSpan != undefined&&artist.lifeSpan.begin!=undefined&&artist.lifeSpan.begin!=""
     });
-    return outputData
-
-}
-function keepLifeSpanEnd(inputData){
-
-    outputData = inputData.filter(function (artist) {
-
-        return artist.lifeSpan != undefined&&artist.lifeSpan.end!=undefined&&artist.lifeSpan.end!=""
-    });
-    return outputData
 
 }
 
-function keepCountry(inputData){
+function splitDBPGenre(){
 
-    outputData = inputData.filter(function (artist) {
+    actualData.forEach(function(artist){
+        if(artist.dbp_genres !="[]"&&artist.dbp_genres!=""&&artist.dbp_genres!=undefined){
+            artist.dbp_genres = parseStringToArray(artist.dbp_genres);
+        }
+    })
+
+}
+
+function splitGenre(){
+
+    actualData.forEach(function(artist){
+        if(artist.genres !="[]"&&artist.genres!=""&&artist.genres!=undefined){
+            artist.genres = parseStringToArray(artist.genres);
+        }
+    })
+}
+
+function splitLocation(){
+
+    actualData.forEach(function(artist){
+        if(artist.location!=undefined&&artist.location.length>0&&artist.location!=""){
+            artist.location = parseStringToArray(artist.location);
+        }
+    })
+}
+
+function keepCountry(){
+
+    actualData = actualData.filter(function (artist) {
 
         return artist.locationInfo!=undefined&&artist.locationInfo!=""
     });
-    return outputData
 
 }
 
-function keepLocation(inputData){
+function keepLocation(){
 
-    outputData = inputData.filter(function (artist) {
+    actualData = actualData.filter(function (artist) {
 
-        return artist.location!=undefined&&artist.location.country!=undefined&&artist.localtion.country!=""
+        return artist.location!=undefined&&artist.location.country!=undefined&&artist.location.country!=""
     });
-    return outputData
 
 }
 
-function keepDeezerFans(inputData){
+function keepDeezerFans(){
 
-    outputData = inputData.filter(function (artist) {
+    actualData = actualData.filter(function (artist) {
 
         return artist.deezerFans!=undefined&&artist.deezerFans!=""
     });
-    return outputData
 
 }
 
 function keepGenre(inputData){
 
-    outputData = inputData.filter(function (artist) {
+    actualData = actualData.filter(function (artist) {
 
-        return artist.dbp_genre!=undefined&&artist.dbp_genre!=""||artist.genre!=undefined&&artist.genre!=""
+        return artist.dbp_genre!=undefined&&artist.dbp_genre!=""&&artist.dbp_genre!="[]"||artist.genres!=undefined&&artist.genres!="[]"&&artist.genres!=""
     });
-    return outputData
 
+
+}
+
+function clusterGenre(){
+    resolveGenreDatabase();
+    finalData.forEach(function(artiste){
+        genreParent = genreDataBase.find(genre => genre.enfant.toLowerCase() == artiste.genre.toLowerCase() || genre.parent.toLowerCase() == artiste.genre.toLowerCase() )
+        if(false){
+            genreExplose = artiste.genre.split(" ");
+            StandardGenreFound = false;
+            i = 0;
+            while(!StandardGenreFound||i!=genreExplose.length){
+                proposition = genreDataBase.find(genre => genre.enfant.toLowerCase() === genreExplose[i].toLowerCase() || genre.parent.toLowerCase() === genreExplose[i].toLowerCase());
+                if(proposition != undefined){
+                    artiste.genre = proposition.parent;
+                    StandardGenreFound = true;
+                }
+                i++;
+            }
+            if(proposition == undefined){
+                artiste.genre = "Autre"
+            }
+        }
+        else if(genreParent != undefined){
+            artiste.genre =  genreParent.parent
+        }
+        else{
+            artiste.genre = "Autre";
+        }
+    })
 }
 
 function getArtistWithDeezerFan(inputData){
@@ -126,4 +235,9 @@ function lookUpArtist(){
             }
         }
     })
+}
+
+function trierWasabiDataByType(){
+    wasabiData = groupBy(wasabiData, 'type');
+    console.log(wasabiData);
 }
