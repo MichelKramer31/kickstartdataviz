@@ -4,6 +4,7 @@
 load_wasabi = document.querySelector('#load_wasabi');
 process_data = document.querySelector('#process_data');
 draw_graph = document.querySelector('#draw_graph');
+nbMaj = 0;
 
 
 load_wasabi.addEventListener('click', event => {
@@ -26,11 +27,15 @@ process_data.addEventListener('click', event => {
 
 draw_graph.addEventListener('click', event => {
     setStatus("Drawing");
-    drawGraph(function(){
+    /*drawGraph(function(){
         setStatus(finalData.length+" données dessinées")
         process_data.hidden = true;
         draw_graph.hidden = true;
+    });*/
+    drawGraph(function(){
+        setStatus("La graph a bien été dessiné");
     });
+    drawFacet();
 });
 
 function onLoad(){
@@ -43,12 +48,16 @@ function setStatus(message){
 }
 
 function drawGraph(callback){
-    var chart = d3.parsets()
-        .dimensions(["fini", "location", "genre"]);
+    chart = d3.parsets()
+        .dimensions(["location", "fini","genre"]);
 
-    var vis = d3.select("#vis").append("svg")
+    vis = d3.select("#vis").append("svg")
         .attr("width", chart.width())
         .attr("height", chart.height());
-        vis.datum(finalData).call(chart);
+    vis.datum(finalData).call(chart);
         callback()
+}
+
+function refreshData() {
+    vis.datum(finalData).call(chart);
 }
