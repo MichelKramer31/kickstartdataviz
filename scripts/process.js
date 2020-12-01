@@ -1,11 +1,21 @@
 
 var wasabiData;
 var actualData;
+var wasabiMusicData;
 
 async function getWasabiData(callback) {
     wasabiData = await getJSON("source/wasabi-artist.json");
     console.log(wasabiData);
     callback();
+}
+
+async function getWasabiMusicData() {
+    wasabiMusicData = await fetch("source/OUT.csv").then(function(data){
+        return data.text();
+    });
+    wasabiMusicData = d3.csvParse(wasabiMusicData);
+    console.log(wasabiMusicData);
+    return wasabiMusicData;
 }
 
 function pipeline(callback) {
@@ -240,4 +250,94 @@ function lookUpArtist(){
 function trierWasabiDataByType(){
     wasabiData = groupBy(wasabiData, 'type');
     console.log(wasabiData);
+}
+
+/**
+ * Nettoye les données de wasibi
+ * Filtre pour retirer les chansons sans longeur ou longeur qui ne sont pas un nombre
+ * Définie une langue par défaut `Sans langue` pour les chansons qui n'ont pas de langue détécté
+ * Définie un album_genre par défaut `Sans genre` pour les chansons qui n'ont pas de album_genre
+ * @param {object[]} wasabiMusicData
+ * @returns {{length: number, language_detect: string, album_genre: string}[]}
+ */
+function cleanData(wasabiMusicData) {
+  return wasabiMusicData
+    .map((d) => {
+      const length = parseInt(d.length, 10);
+      return {
+        length : Math.min(length, 550),
+        language_detect: d.language_detect || "sans langue",
+        album_genre:
+          d.album_genre && d.album_genre.length > 0
+            ? filterGenre(d.album_genre)
+            : "sans genre",
+      };
+    })
+    .filter((d) => !isNaN(d.length));
+}
+
+/**
+ * Regroupe la longeur des chansons par langue et par album_genre
+ * @param {{length: number, language_detect: string, genre: string[]}[]} data
+ * @returns {Map<string, Map<string, number[]>>}
+ */
+function computeLengthByLanguageAndGenre(data) {
+  return data.reduce(
+    (lengthByLanguageAndGenre, { length, language_detect, album_genre }) => {
+      if (!lengthByLanguageAndGenre.has(language_detect)) {
+        lengthByLanguageAndGenre.set(language_detect, new Map());
+      }
+      const lengthByGenre = lengthByLanguageAndGenre.get(language_detect);
+        if (!lengthByGenre.has(album_genre)) {
+          lengthByGenre.set(album_genre, []);
+        }
+        lengthByGenre.get(album_genre).push(length);
+      return lengthByLanguageAndGenre;
+    },
+    new Map()
+  );
+}
+
+/**
+ * Récupère tous les genres différents dans les données
+ * @param {{length: number, language_detect: string, album_genre: string[]}[]} data
+ * @returns {string[]}
+ */
+function computeAllGenre(data) {
+  const allGenre = new Set();
+  data.forEach(({ album_genre }) => {
+    allGenre.add(album_genre);  
+  });
+  return Array.from(allGenre.values());
+}
+
+/**
+ * Calcul la moyenne des nombres en paramètres
+ * @param {number[]} numbers
+ * @returns {number}
+ */
+function avg(numbers) {
+  if (!Array.isArray(numbers) || numbers.length === 0) {
+    return 0;
+  } else {
+    return numbers.reduce((sum, length) => sum + length, 0) / numbers.length;
+  }
+}
+
+/**
+ * Regroupe les genres par famille, pour éviter d'avoir trop d'axes sur le radar
+ * Il y en a environ 550 dans le jeux de données sinon
+ * @param {string} album_genre
+ * @returns {string}
+ */
+function filterGenre(album_genre){
+
+  listeGenre = ["rock", "pop", "metal", "punk", "hip hop", "rap", "soul", "folk", "electro", "jazz",
+    "core", "funk", "blues", "reggae", "wave"];
+  for( const genre of listeGenre) {
+    if(album_genre.toLowerCase().includes(genre)) {
+     return genre;
+    }
+  }
+  return "autre";
 }

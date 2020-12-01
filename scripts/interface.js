@@ -13,7 +13,7 @@ load_wasabi.addEventListener('click', event => {
         load_wasabi.hidden = true;
         process_data.hidden = false;
     });
-    setStatus("Télechargement...");
+    setStatus("Téléchargement...");
 });
 
 process_data.addEventListener('click', event => {
@@ -61,3 +61,4 @@ function drawGraph(callback){
 function refreshData() {
     vis.datum(finalData).call(chart);
 }
+
